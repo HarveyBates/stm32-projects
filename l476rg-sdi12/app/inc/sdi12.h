@@ -7,6 +7,8 @@
 
 #include "main.h"
 
+#define MAX_RESPONSE_SIZE 75
+
 /*
  * GPIO Pin, Port and UART for SDI12 functions.
  */
@@ -33,5 +35,6 @@ HAL_StatusTypeDef SDI12_AckActive(char *addr);
 void SDI12_DevicesOnBus(uint8_t* devices);
 HAL_StatusTypeDef SDI12_ChangeAddr(char *from_addr, char *to_addr);
 HAL_StatusTypeDef SDI12_StartMeasurement(char *addr, SDI12_Measure_TypeDef *measure_info);
+HAL_StatusTypeDef SDI12_SendData(char *addr, SDI12_Measure_TypeDef *measurement_info, char *data);
 
 #endif // SDI12_

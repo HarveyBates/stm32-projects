@@ -109,13 +109,17 @@ void SDI12_DevicesOnBus(uint8_t* devices) {
 HAL_StatusTypeDef SDI12_ChangeAddr(char *from_addr, char *to_addr) {
 	char cmd[5] = {*from_addr, 'A', *to_addr, '!', 0x00};
 	char response[3] = {0};
-	HAL_StatusTypeDef result = SDI12_QueryDevice(cmd, 5, response, 100);
+	HAL_StatusTypeDef result = SDI12_QueryDevice(cmd, 5, response, 3);
 	return result;
 }
 
 
 /*
- * Start measurement. No CRC.
+ * Start measurement. This command tells the sensor you want to take a measurement.
+ * However, this command does not return any data. Instead it gives you
+ * information regarding what a measurement would contain and how long it would take
+ * to be captured.
+ * To get data the user must call the send data command (D0!). -> SDI12_SendData(...)
  * Expected response {'0', '0', '0', '1', '3', '\r', '\n'}
  * Expected response as = atttn -> address (a), 3 time numbers (t) and n results (n).
  */
@@ -127,7 +131,7 @@ HAL_StatusTypeDef SDI12_StartMeasurement(char *addr, SDI12_Measure_TypeDef *meas
 	// Check for valid response
 	if (response[0] != '\0') {
 		// Address of queried device (a)
-		measurement_info->Address = (uint8_t)response[0];
+		measurement_info->Address = response[0];
 
 		// Extract time from response to be converted to uint16_t
 		char time_buf[3];
@@ -140,9 +144,60 @@ HAL_StatusTypeDef SDI12_StartMeasurement(char *addr, SDI12_Measure_TypeDef *meas
 		measurement_info->Time = sscanf(time_buf, "%hd", &time);
 
 		// Number of values to expect in measurement (n)
-		measurement_info->NumValues = response[4];
+		measurement_info->NumValues = response[4] - '0'; // char to uint8_t
 	};
 
 	return result;
 }
+
+/*
+ * Send measurement data from the sensor. Must be called after a M, C or V
+ * command. Called until the number of measurements (obtained in a M command)
+ * are received.
+ * The populated array (data) should have sufficient size to hold all values
+ * returned from the sensor (approx upto 10 * 75 = 750).
+ */
+HAL_StatusTypeDef SDI12_SendData(
+		char *addr,
+		SDI12_Measure_TypeDef *measurement_info,
+		char *data) {
+
+	uint16_t index = 0; // Holds position in data array
+	uint8_t n_values = 0; // Holds index of number of values recieved
+	// Loop through until all the data has been caputed (matching NumValues)
+	for(char i = '0'; i < '9'; i++) {
+
+		char cmd[5] = {*addr, 'D', i, '!', 0x00};
+		char response[MAX_RESPONSE_SIZE] = {0};
+		HAL_StatusTypeDef result = SDI12_QueryDevice(cmd, 5, response, MAX_RESPONSE_SIZE);
+		if (result != HAL_OK) {
+			return result;
+		}
+
+		uint8_t res_index = 0;
+		for(uint8_t x = 0; x < MAX_RESPONSE_SIZE; x++) {
+			// Total number of + and - should equal NumValues if all values have been recieved
+			if(response[x] == '+' || response[x] == '-') {
+				n_values++;
+			}
+			// No need to go search beyond recieved data
+			if(response[x] == '\0') {
+				break;
+			}
+			res_index++;
+		}
+
+		// Copy response into final data array (keeping track of index)
+		memcpy(&data[index], response, res_index);
+		index += res_index;
+
+		// All values recieved
+		if (n_values == (char)measurement_info->NumValues) {
+			return HAL_OK;
+		}
+	}
+
+	return HAL_ERROR;
+}
+
 

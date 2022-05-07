@@ -107,8 +107,16 @@ int main(void)
 	{
 		char addr = '0';
 		SDI12_Measure_TypeDef measurement_info;
+
+		// Request measurement
 		SDI12_StartMeasurement(&addr, &measurement_info);
-		HAL_Delay(5000);
+		HAL_Delay(measurement_info.Time * 1000); // Requried
+
+		// Receive data
+		char data[800]; // <- Absolute maximum size (should be better method)
+		SDI12_SendData(&addr, &measurement_info, data);
+
+		HAL_Delay(10000);
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
