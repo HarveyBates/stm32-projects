@@ -121,7 +121,8 @@ HAL_StatusTypeDef SDI12_ChangeAddr(char *from_addr, char *to_addr) {
  * to be captured.
  * To get data the user must call the send data command (D0!). -> SDI12_SendData(...)
  * Expected response {'0', '0', '0', '1', '3', '\r', '\n'}
- * Expected response as = atttn -> address (a), 3 time numbers (t) and n results (n).
+ * Expected response as = atttn -> address (a), 3 numbers representing processing time (t)
+ * and n results (n).
  */
 HAL_StatusTypeDef SDI12_StartMeasurement(char *addr, SDI12_Measure_TypeDef *measurement_info) {
 	char cmd[4] = {*addr, 'M', '!', 0x00};
@@ -163,7 +164,7 @@ HAL_StatusTypeDef SDI12_SendData(
 		char *data) {
 
 	uint16_t index = 0; // Holds position in data array
-	uint8_t n_values = 0; // Holds index of number of values recieved
+	uint8_t n_values = 0; // Holds index of number of values received
 	// Loop through until all the data has been caputed (matching NumValues)
 	for(char i = '0'; i < '9'; i++) {
 
@@ -176,11 +177,11 @@ HAL_StatusTypeDef SDI12_SendData(
 
 		uint8_t res_index = 0;
 		for(uint8_t x = 0; x < MAX_RESPONSE_SIZE; x++) {
-			// Total number of + and - should equal NumValues if all values have been recieved
+			// Total number of + and - should equal NumValues if all values have been received
 			if(response[x] == '+' || response[x] == '-') {
 				n_values++;
 			}
-			// No need to go search beyond recieved data
+			// No need to go search beyond received data
 			if(response[x] == '\0') {
 				break;
 			}
@@ -188,16 +189,22 @@ HAL_StatusTypeDef SDI12_SendData(
 		}
 
 		// Copy response into final data array (keeping track of index)
-		memcpy(&data[index], response, res_index);
-		index += res_index;
+		// Also check if there is atleast some valid data in the buffer (response)
+		if(response[0]  != '\0') {
+			memcpy(&data[index], response, res_index);
+			index += res_index;
+		}
 
-		// All values recieved
-		if (n_values == (char)measurement_info->NumValues) {
+		// All values received
+		if (n_values == measurement_info->NumValues) {
 			return HAL_OK;
 		}
 	}
 
 	return HAL_ERROR;
 }
+
+
+
 
 
