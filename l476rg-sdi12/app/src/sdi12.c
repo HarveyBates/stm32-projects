@@ -1,3 +1,25 @@
+/*
+ ******************************************************************************
+ * @file           : sdi12.c
+ * @brief          : SDI-12 library for STM32 microcontrollers.
+ * 						Built using a STM32L476RG.
+ ******************************************************************************
+ * @attention
+ *
+ * !! SDI-12 uses 5 V logic, ensure your microcontrollers pins are 5 V
+ * compatible !!
+ *
+ ******************************************************************************
+ * @currently_supports
+ * 	- Acknowledge active (a!)
+ * 	- Send idenfification (aI!)
+ * 	- Change address (aAb!)
+ * 	- Start measurement (aM!)
+ * 	- Send data (aD0!)
+ * 	- Start verification (aV!)
+ ******************************************************************************
+ */
+
 #include "sdi12.h"
 
 SDI12_TypeDef sdi12;
@@ -17,6 +39,21 @@ void SDI12_Init(UART_HandleTypeDef *huart) {
 
 /*
  * Main function to deal with SDI12 commands and responses.
+ * Struture is as follows.
+ *
+ * Break (12 ms)
+      │                          380 - 810 ms
+      ▼      Command              Response
+    ┌───┐  ┌─┐ ┌─┐ ┌─┐           ┌─┐ ┌─┐ ┌─┐
+    │   │  │ │ │ │ │ │           │ │ │ │ │ │
+────┘   └──┘ └─┘ └─┘ └───────────┘ └─┘ └─┘ └─
+          ▲               Max
+          │          ◄───15 ms───►
+      Marking (8.3 ms)
+ *
+ *
+ * Uses a single UART pin (TX) and cycles between TX and RX to
+ * send and receive commands (respectively).
  */
 static HAL_StatusTypeDef SDI12_QueryDevice(
 		char *cmd,
@@ -91,7 +128,7 @@ HAL_StatusTypeDef SDI12_AckActive(char *addr) {
 /*
  * Used to populate a list of connected device addresses.
  */
-void SDI12_DevicesOnBus(uint8_t* devices) {
+void SDI12_DevicesOnBus(char* devices) {
 	uint8_t index = 0;
 	for(char i = '0'; i < '9'; i++) {
 		HAL_StatusTypeDef result = SDI12_AckActive(&i);
@@ -112,7 +149,6 @@ HAL_StatusTypeDef SDI12_ChangeAddr(char *from_addr, char *to_addr) {
 	HAL_StatusTypeDef result = SDI12_QueryDevice(cmd, 5, response, 3);
 	return result;
 }
-
 
 /*
  * Start measurement. This command tells the sensor you want to take a measurement.
@@ -202,6 +238,44 @@ HAL_StatusTypeDef SDI12_SendData(
 	}
 
 	return HAL_ERROR;
+}
+
+/*
+ * Request verification command (aV!) containing system information (a = address).
+ * Basically system diagnostics of the sensor.
+ *
+ * Command format is similar to that of a "M" SDI12_StartMeasurement command. e.g. atttn
+ *
+ * Response is similar to a "D" SDI12_SendData command. e.g. 0D0!0+1\n\r
+ *
+ * Up to the manufacturer to decide on what is included. As such this command may not
+ * return information on all devices.
+ */
+HAL_StatusTypeDef SDI12_StartVerification(char *addr, SDI12_Verification_TypeDef *verification_info) {
+	char cmd[4] = {*addr, 'V', '!', 0x00};
+	char response[7] = {0};
+	HAL_StatusTypeDef result = SDI12_QueryDevice(cmd, 4, response, 7);
+
+	// Check for valid response
+	if (response[0] != '\0') {
+		// Address of queried device (a)
+		verification_info->Address = response[0];
+
+		// Extract time from response to be converted to uint16_t
+		char time_buf[3];
+		for(uint8_t i = 1; i < 4; i++) {
+			time_buf[i-1] = response[i];
+		}
+
+		// Convert time_buf (ttt) into uint16_t
+		uint16_t time;
+		verification_info->Time = sscanf(time_buf, "%hd", &time);
+
+		// Number of values to expect in measurement (n)
+		verification_info->NumValues = response[4] - '0'; // char to uint8_t
+	};
+
+	return result;
 }
 
 
