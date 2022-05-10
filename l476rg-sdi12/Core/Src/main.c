@@ -106,15 +106,33 @@ int main(void)
 	while (1)
 	{
 		char addr = '0';
+
+		/*
+		 * Measure command (test)
+		 */
+	//	uint8_t crc = 0;
+	//	SDI12_Measure_TypeDef measurement_info;
+	//	char data[800];
+	//	SDI12_StartMeasurement(&addr, &measurement_info);
+	//	SDI12_SendData(&addr, &measurement_info, data);
+
+		/*
+		 * Verification command (test)
+		 */
+	//	SDI12_Measure_TypeDef verification_info;
+	//	char data[800] = {0};
+	//	SDI12_StartVerification(&addr, &verification_info);
+	//	HAL_Delay(verification_info.Time * 1000); // Requried
+	//	SDI12_SendData(&addr, &verification_info, data);
+
+		/*
+		 * Measure command with CRC (test)
+		 */
 		SDI12_Measure_TypeDef measurement_info;
+		//char data[800];
+		SDI12_StartMeasurementCRC(&addr, &measurement_info);
+		//SDI12_SendData(&addr, &measurement_info, data);
 
-		// Request measurement
-		SDI12_StartMeasurement(&addr, &measurement_info);
-		HAL_Delay(measurement_info.Time * 1000); // Requried
-
-		// Receive data
-		char data[800]; // <- Absolute maximum size (should be better method)
-		SDI12_SendData(&addr, &measurement_info, data);
 
 		HAL_Delay(10000);
 		/* USER CODE END WHILE */

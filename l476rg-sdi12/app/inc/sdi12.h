@@ -45,6 +45,7 @@ typedef struct {
  * Query = aM!
  * Response = atttn where a = address, t = three numbers indication response
  * time (ttt) and the expected number of values (n)
+ * Also used for verification response after an aV! command.
  */
 typedef struct {
 	char Address;
@@ -52,23 +53,14 @@ typedef struct {
 	uint8_t NumValues;
 } SDI12_Measure_TypeDef;
 
-/*
- * Verification information response.
- * Query = aV!
- * Response = atttn where a = address, t = three numbers indication response
- * time (ttt) and the expected number of values (n)
- */
-typedef struct {
-	char Address;
-	uint16_t Time;
-	uint8_t NumValues;
-} SDI12_Verification_TypeDef;
-
 void SDI12_Init(UART_HandleTypeDef *huart);
 HAL_StatusTypeDef SDI12_AckActive(char *addr);
 void SDI12_DevicesOnBus(char* devices);
 HAL_StatusTypeDef SDI12_ChangeAddr(char *from_addr, char *to_addr);
 HAL_StatusTypeDef SDI12_StartMeasurement(char *addr, SDI12_Measure_TypeDef *measure_info);
 HAL_StatusTypeDef SDI12_SendData(char *addr, SDI12_Measure_TypeDef *measurement_info, char *data);
+HAL_StatusTypeDef SDI12_StartVerification(char *addr, SDI12_Measure_TypeDef *verification_info);
+HAL_StatusTypeDef SDI12_CheckCRC(char *response);
+HAL_StatusTypeDef SDI12_StartMeasurementCRC(char *addr, SDI12_Measure_TypeDef *measurement_info);
 
 #endif // SDI12_

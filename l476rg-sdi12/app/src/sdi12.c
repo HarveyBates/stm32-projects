@@ -251,7 +251,7 @@ HAL_StatusTypeDef SDI12_SendData(
  * Up to the manufacturer to decide on what is included. As such this command may not
  * return information on all devices.
  */
-HAL_StatusTypeDef SDI12_StartVerification(char *addr, SDI12_Verification_TypeDef *verification_info) {
+HAL_StatusTypeDef SDI12_StartVerification(char *addr, SDI12_Measure_TypeDef *verification_info) {
 	char cmd[4] = {*addr, 'V', '!', 0x00};
 	char response[7] = {0};
 	HAL_StatusTypeDef result = SDI12_QueryDevice(cmd, 4, response, 7);
@@ -278,7 +278,68 @@ HAL_StatusTypeDef SDI12_StartVerification(char *addr, SDI12_Verification_TypeDef
 	return result;
 }
 
+/*
+ * Cyclic Redundancy Check (CRC).
+ * Part of the >1.3 SDI-12 specification.
+ * Error detection for line transmission.
+ */
+uint16_t SDI12_CheckCRC(char *response) {
+	uint16_t crc = 0;
+	const uint8_t timeout = 9;
+	uint8_t i = 0;
+	while(response[i] != '\r' && i < timeout) {
+		crc ^= response[i]; // XOR character
+		for(uint8_t c = 8; c > 0; c--) {
+			if(crc & 1) { // LSB  = 1
+				crc >>= 1;  // One bit right
+				crc ^= 0xA001; // XOR 0xA001
+			} else {
+				crc >>= 1; // One bit right
+			}
+		}
+		i++;
+	}
+
+	return crc;
+}
 
 
+/*
+ * Start measurment with CRC for error checking.
+ * Vitually the same as the SDI12_StartMeasurement(...) function,
+ * however, a CRC is preformed with sensors using >1.3 of the
+ * SDI-12 specification.
+ * If this function is called on sensors below version 1.3 no
+ * errors will through and the function will operate the same as
+ * SDI12_StartMeasurement(...)
+ */
+HAL_StatusTypeDef SDI12_StartMeasurementCRC(char *addr, SDI12_Measure_TypeDef *measurement_info) {
+	char cmd[5] = {*addr, 'M', 'C', '!', 0x00};
+	char response[9] = {0};
+	HAL_StatusTypeDef result = SDI12_QueryDevice(cmd, 5, response, 9);
+
+	// Check for valid response
+	if (response[0] != '\0') {
+		// Address of queried device (a)
+		measurement_info->Address = response[0];
+
+		// Extract time from response to be converted to uint16_t
+		char time_buf[3];
+		for(uint8_t i = 1; i < 4; i++) {
+			time_buf[i-1] = response[i];
+		}
+
+		// Convert time_buf (ttt) into uint16_t
+		uint16_t time;
+		measurement_info->Time = sscanf(time_buf, "%hd", &time);
+
+		// Number of values to expect in measurement (n)
+		measurement_info->NumValues = response[4] - '0'; // char to uint8_t
+	};
+
+	SDI12_CheckCRC(response);
+
+	return result;
+}
 
 
