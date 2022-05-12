@@ -21,8 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "sdi12.h"
-#include "sdi12_debug.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,7 +39,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart1;
+I2C_HandleTypeDef hi2c1;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -51,10 +51,9 @@ UART_HandleTypeDef huart2;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_USART1_UART_Init(void);
+static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
-//void SDI12_Init(UART_HandleTypeDef *huart);
-//void SDI12_GetDeviceId(uint8_t *addr);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -69,7 +68,6 @@ static void MX_USART1_UART_Init(void);
 int main(void)
 {
 	/* USER CODE BEGIN 1 */
-
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -91,13 +89,13 @@ int main(void)
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_USART2_UART_Init();
-	MX_USART1_UART_Init();
+	MX_I2C1_Init();
 	/* USER CODE BEGIN 2 */
 
 	/*
-	 * SDI12 Initliasation
+	 * Initialise MCP9808 temperature monitor.
 	 */
-	SDI12_Init(&huart1);
+	MCP9808_Init(&hi2c1, 0x18);
 
 	/* USER CODE END 2 */
 
@@ -105,38 +103,14 @@ int main(void)
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		char addr = '0';
+		float temperature = 0.00;
+		MCP9808_MeasureTemperature(&temperature);
 
-		/*
-		 * Measure command (test)
-		 */
-		SDI12_Measure_TypeDef measurement_info;
-		char data[800] = {0};
-		SDI12_StartMeasurement(&addr, &measurement_info);
-		HAL_Delay(measurement_info.Time * 1000);
-		SDI12_SendData(&addr, &measurement_info, data);
-
-		/*
-		 * Verification command (test)
-		 */
-		//	SDI12_Measure_TypeDef verification_info;
-		//	char data[800] = {0};
-		//	SDI12_StartVerification(&addr, &verification_info);
-		//	HAL_Delay(verification_info.Time * 1000); // Requried
-		//	SDI12_SendData(&addr, &verification_info, data);
-
-		/*
-		 * Measure command with CRC (test)
-		 */
-		//SDI12_Measure_TypeDef measurement_info;
-		//char data[800];
-		//SDI12_StartMeasurementCRC(&addr, &measurement_info);
-		//SDI12_SendData(&addr, &measurement_info, data);
-
-
-		HAL_Delay(10000);
+		//strcpy((char *)buf, "Hello!\r\n");
+		//HAL_UART_Transmit(&huart2, (uint8_t *)temperature,
+		//sizeof(temperature), HAL_MAX_DELAY);
+		HAL_Delay(1000);
 		/* USER CODE END WHILE */
-
 		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
@@ -182,8 +156,8 @@ void SystemClock_Config(void)
 			|RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV16;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV16;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
 	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
 	{
@@ -192,48 +166,50 @@ void SystemClock_Config(void)
 }
 
 /**
- * @brief USART1 Initialization Function
+ * @brief I2C1 Initialization Function
  * @param None
  * @retval None
  */
-static void MX_USART1_UART_Init(void)
+static void MX_I2C1_Init(void)
 {
 
-	/* USER CODE BEGIN USART1_Init 0 */
+	/* USER CODE BEGIN I2C1_Init 0 */
 
-	/* USER CODE END USART1_Init 0 */
+	/* USER CODE END I2C1_Init 0 */
 
-	/* USER CODE BEGIN USART1_Init 1 */
+	/* USER CODE BEGIN I2C1_Init 1 */
 
-	/* USER CODE END USART1_Init 1 */
-	huart1.Instance = USART1;
-	huart1.Init.BaudRate = 1200;
-	huart1.Init.WordLength = UART_WORDLENGTH_8B;
-	huart1.Init.StopBits = UART_STOPBITS_1;
-	huart1.Init.Parity = UART_PARITY_EVEN;
-	huart1.Init.Mode = UART_MODE_TX_RX;
-	huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-	huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-	huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_TXINVERT_INIT|UART_ADVFEATURE_RXINVERT_INIT
-			|UART_ADVFEATURE_SWAP_INIT;
-	huart1.AdvancedInit.TxPinLevelInvert = UART_ADVFEATURE_TXINV_ENABLE;
-	huart1.AdvancedInit.RxPinLevelInvert = UART_ADVFEATURE_RXINV_ENABLE;
-	huart1.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_ENABLE;
-	if (HAL_UART_Init(&huart1) != HAL_OK)
-	{
-		Error_Handler();
-	}
-	/* USER CODE BEGIN USART1_Init 2 */
-
-	// Keep TX as the transmit pin on startup
-	huart1.AdvancedInit.Swap = UART_ADVFEATURE_SWAP_DISABLE;
-	if (HAL_UART_Init(&huart1) != HAL_OK)
+	/* USER CODE END I2C1_Init 1 */
+	hi2c1.Instance = I2C1;
+	hi2c1.Init.Timing = 0x10909CEC;
+	hi2c1.Init.OwnAddress1 = 0;
+	hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+	hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+	hi2c1.Init.OwnAddress2 = 0;
+	hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+	hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+	if (HAL_I2C_Init(&hi2c1) != HAL_OK)
 	{
 		Error_Handler();
 	}
 
-	/* USER CODE END USART1_Init 2 */
+	/** Configure Analogue filter
+	 */
+	if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
+	{
+		Error_Handler();
+	}
+
+	/** Configure Digital filter
+	 */
+	if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
+	{
+		Error_Handler();
+	}
+	/* USER CODE BEGIN I2C1_Init 2 */
+
+	/* USER CODE END I2C1_Init 2 */
 
 }
 
@@ -290,14 +266,11 @@ static void MX_GPIO_Init(void)
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, GPIO_PIN_RESET);
-
-	/*Configure GPIO pin : PUSH_BTN_Pin */
-	GPIO_InitStruct.Pin = PUSH_BTN_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	/*Configure GPIO pin : B1_Pin */
+	GPIO_InitStruct.Pin = B1_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(PUSH_BTN_GPIO_Port, &GPIO_InitStruct);
+	HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
 	/*Configure GPIO pin : LD2_Pin */
 	GPIO_InitStruct.Pin = LD2_Pin;
@@ -306,28 +279,9 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
-	/*Configure GPIO pin : OE_Pin */
-	GPIO_InitStruct.Pin = OE_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(OE_GPIO_Port, &GPIO_InitStruct);
-
-	/* EXTI interrupt init*/
-	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
 }
 
 /* USER CODE BEGIN 4 */
-
-/*
- * Wrapper around HAL_UART_Transmit() to make it easier to call
- * from other files. Size is dynamic up to 256 bytes.
- */
-void debug_output(uint8_t *data, uint8_t size) {
-	HAL_UART_Transmit(&huart2, (uint8_t *)data, size, 100);
-}
 
 /* USER CODE END 4 */
 
@@ -342,7 +296,6 @@ void Error_Handler(void)
 	__disable_irq();
 	while (1)
 	{
-
 	}
 	/* USER CODE END Error_Handler_Debug */
 }

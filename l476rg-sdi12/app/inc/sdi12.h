@@ -60,7 +60,7 @@ HAL_StatusTypeDef SDI12_ChangeAddr(char *from_addr, char *to_addr);
 HAL_StatusTypeDef SDI12_StartMeasurement(char *addr, SDI12_Measure_TypeDef *measure_info);
 HAL_StatusTypeDef SDI12_SendData(char *addr, SDI12_Measure_TypeDef *measurement_info, char *data);
 HAL_StatusTypeDef SDI12_StartVerification(char *addr, SDI12_Measure_TypeDef *verification_info);
-HAL_StatusTypeDef SDI12_CheckCRC(char *response);
+uint16_t SDI12_CheckCRC(char *response);
 HAL_StatusTypeDef SDI12_StartMeasurementCRC(char *addr, SDI12_Measure_TypeDef *measurement_info);
 
 #endif // SDI12_

@@ -78,7 +78,7 @@ static HAL_StatusTypeDef SDI12_QueryDevice(
 	GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 	GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
 	HAL_GPIO_Init(sdi12.Port, &GPIO_InitStruct);
-	HAL_Delay(8);
+	HAL_Delay(9);
 
 	// Transmit
 	HAL_StatusTypeDef res = HAL_UART_Transmit(sdi12.Huart, (uint8_t *)cmd, cmd_len, 1000);
@@ -289,7 +289,7 @@ uint16_t SDI12_CheckCRC(char *response) {
 	uint8_t i = 0;
 	while(response[i] != '\r' && i < timeout) {
 		crc ^= response[i]; // XOR character
-		for(uint8_t c = 8; c > 0; c--) {
+		for(uint8_t c = 0; c > 8; c++) {
 			if(crc & 1) { // LSB  = 1
 				crc >>= 1;  // One bit right
 				crc ^= 0xA001; // XOR 0xA001
