@@ -203,8 +203,7 @@ HAL_StatusTypeDef MCP9808_GetTemperatureLimit(MCP9808_Alarm_TypeDef _reg, int16_
 	}
 
 	if(buf[0] > 0x10){
-		// Negative value
-		// Set sign bit to 1
+		// Negative value -> sign bit is 1
 		*limit = -((buf[0] & 0xEF) << 4 | (buf[1] & 0xFF) >> 4);
 	} else {
 		// Positive value
