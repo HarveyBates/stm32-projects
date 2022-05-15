@@ -103,19 +103,15 @@ int main(void)
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
+
 		float temperature = 0.00;
 		MCP9808_MeasureTemperature(&temperature);
 		HAL_Delay(1000);
-		MCP9808_SetResolution(MCP9808_Low_Res);
+		MCP9808_SetTemperatureLimits(MCP9808_T_UPPER_REG, -100);
 		HAL_Delay(1000);
-		MCP9808_MeasureTemperature(&temperature);
+		int16_t temp_limit;
+		MCP9808_GetTemperatureLimit(MCP9808_T_UPPER_REG, &temp_limit);
 		HAL_Delay(1000);
-		MCP9808_GetResolution();
-		HAL_Delay(1000);
-
-		//strcpy((char *)buf, "Hello!\r\n");
-		//HAL_UART_Transmit(&huart2, (uint8_t *)temperature,
-		//sizeof(temperature), HAL_MAX_DELAY);
 
 		/* USER CODE END WHILE */
 		/* USER CODE BEGIN 3 */
