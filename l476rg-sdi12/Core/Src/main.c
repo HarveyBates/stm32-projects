@@ -112,26 +112,26 @@ int main(void)
 		 */
 		SDI12_Measure_TypeDef measurement_info;
 		char data[800] = {0};
-		SDI12_StartMeasurement(&addr, &measurement_info);
+		SDI12_StartMeasurement(addr, &measurement_info);
 		HAL_Delay(measurement_info.Time * 1000);
-		SDI12_SendData(&addr, &measurement_info, data);
+		SDI12_SendData(addr, &measurement_info, data);
 
 		/*
 		 * Verification command (test)
 		 */
 		//	SDI12_Measure_TypeDef verification_info;
 		//	char data[800] = {0};
-		//	SDI12_StartVerification(&addr, &verification_info);
+		//	SDI12_StartVerification(addr, &verification_info);
 		//	HAL_Delay(verification_info.Time * 1000); // Requried
-		//	SDI12_SendData(&addr, &verification_info, data);
+		//	SDI12_SendData(addr, &verification_info, data);
 
 		/*
 		 * Measure command with CRC (test)
 		 */
 		//SDI12_Measure_TypeDef measurement_info;
 		//char data[800];
-		//SDI12_StartMeasurementCRC(&addr, &measurement_info);
-		//SDI12_SendData(&addr, &measurement_info, data);
+		//SDI12_StartMeasurementCRC(addr, &measurement_info);
+		//SDI12_SendData(addr, &measurement_info, data);
 
 
 		HAL_Delay(10000);
