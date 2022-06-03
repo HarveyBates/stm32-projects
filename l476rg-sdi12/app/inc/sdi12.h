@@ -2,7 +2,7 @@
  ******************************************************************************
  * @file           : sdi12.h
  * @brief          : SDI-12 library for STM32 microcontrollers.
- * 						Built using a STM32L476RG.
+ *            Built using a STM32L476RG and STM32L073RZ.
  ******************************************************************************
  * @attention
  *
@@ -11,12 +11,12 @@
  *
  ******************************************************************************
  * @currently_supports
- * 	- Acknowledge active (a!)
- * 	- Send idenfification (aI!)
- * 	- Change address (aAb!)
- * 	- Start measurement (aM!)
- * 	- Send data (aD0!)
- * 	- Start verification (aV!)
+ *  - Acknowledge active (a!)
+ *  - Send idenfification (aI!)
+ *  - Change address (aAb!)
+ *  - Start measurement (aM!)
+ *  - Send data (aD0!)
+ *  - Start verification (aV!)
  ******************************************************************************
  */
 
@@ -35,9 +35,9 @@
  * GPIO Pin, Port and UART for SDI12 functions.
  */
 typedef struct {
-	UART_HandleTypeDef *Huart;
-	uint32_t Pin;
-	GPIO_TypeDef *Port;
+    UART_HandleTypeDef *Huart;
+    uint32_t Pin;
+    GPIO_TypeDef *Port;
 } SDI12_TypeDef;
 
 /*
@@ -48,19 +48,20 @@ typedef struct {
  * Also used for verification response after an aV! command.
  */
 typedef struct {
-	char Address;
-	uint16_t Time;
-	uint8_t NumValues;
+    char Address;
+    uint16_t Time;
+    uint8_t NumValues;
 } SDI12_Measure_TypeDef;
 
 void SDI12_Init(UART_HandleTypeDef *huart);
-HAL_StatusTypeDef SDI12_AckActive(char *addr);
-void SDI12_DevicesOnBus(char* devices);
+HAL_StatusTypeDef SDI12_AckActive(const char addr);
+void SDI12_DevicesOnBus(char *const devices);
+HAL_StatusTypeDef SDI12_GetId(const char addr, char response[], uint8_t response_len);
 HAL_StatusTypeDef SDI12_ChangeAddr(char *from_addr, char *to_addr);
-HAL_StatusTypeDef SDI12_StartMeasurement(char *addr, SDI12_Measure_TypeDef *measure_info);
-HAL_StatusTypeDef SDI12_SendData(char *addr, SDI12_Measure_TypeDef *measurement_info, char *data);
-HAL_StatusTypeDef SDI12_StartVerification(char *addr, SDI12_Measure_TypeDef *verification_info);
+HAL_StatusTypeDef SDI12_StartMeasurement(const char addr, SDI12_Measure_TypeDef *measure_info);
+HAL_StatusTypeDef SDI12_SendData(const char addr, const SDI12_Measure_TypeDef *measurement_info, char *data);
+HAL_StatusTypeDef SDI12_StartVerification(const char addr, SDI12_Measure_TypeDef *verification_info);
 uint16_t SDI12_CheckCRC(char *response);
-HAL_StatusTypeDef SDI12_StartMeasurementCRC(char *addr, SDI12_Measure_TypeDef *measurement_info);
+HAL_StatusTypeDef SDI12_StartMeasurementCRC(const char addr, SDI12_Measure_TypeDef *measurement_info);
 
 #endif // SDI12_
